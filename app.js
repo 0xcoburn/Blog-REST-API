@@ -5,9 +5,10 @@ const bodyParser = require("body-parser");
 const multer = require("multer");
 const mongoose = require("mongoose");
 require("dotenv").config();
+const graphqlHttp = require("express-graphql");
 
-const feedRoutes = require("./routes/feed");
-const authRoutes = require("./routes/auth");
+const graphqlSchema = require("./graphql/schema");
+const graphqlResolver = require("./graphql/resolvers");
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -51,8 +52,14 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use("/feed", feedRoutes);
-app.use("/auth", authRoutes);
+app.use(
+  "/graphql",
+  graphqlHttp({
+    schema: graphqlSchema,
+    rootValue: graphqlResolver,
+    graphiql: true,
+  })
+);
 
 app.use((error, req, res, next) => {
   console.log(error);
@@ -71,10 +78,6 @@ mongoose
     useUnifiedTopology: true,
   })
   .then((result) => {
-    const server = app.listen(8080);
-    const io = require("./socket").init(server);
-    io.on("connection", (socket) => {
-      console.log("Client connected");
-    });
+    app.listen(8080);
   })
   .catch((err) => console.log(err));
